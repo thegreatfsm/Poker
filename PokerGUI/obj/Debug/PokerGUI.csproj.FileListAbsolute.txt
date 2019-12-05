@@ -1,0 +1,13 @@
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.csprojAssemblyReference.cache
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.PokerGUI.resources
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.Properties.Resources.resources
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.csproj.GenerateResource.cache
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.csproj.CoreCompileInputs.cache
+C:\Users\Joseph\source\repos\Poker\PokerGUI\bin\Debug\PokerGUI.exe.config
+C:\Users\Joseph\source\repos\Poker\PokerGUI\bin\Debug\PokerGUI.exe
+C:\Users\Joseph\source\repos\Poker\PokerGUI\bin\Debug\PokerGUI.pdb
+C:\Users\Joseph\source\repos\Poker\PokerGUI\bin\Debug\PokerLibrary.dll
+C:\Users\Joseph\source\repos\Poker\PokerGUI\bin\Debug\PokerLibrary.pdb
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.csproj.CopyComplete
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.exe
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.pdb
