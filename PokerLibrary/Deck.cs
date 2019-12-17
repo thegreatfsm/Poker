@@ -15,7 +15,7 @@ namespace PokerLibrary
             CardList = new List<Card>();
             for(int i=0; i<52; i++)
             {
-                CardList.Add(new Card(i/13, i%13));
+                CardList.Add(new Card(i/13, i%13, i+1));
             }
         }
         public void Shuffle()

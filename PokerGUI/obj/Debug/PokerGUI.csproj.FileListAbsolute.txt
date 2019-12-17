@@ -11,3 +11,5 @@ C:\Users\Joseph\source\repos\Poker\PokerGUI\bin\Debug\PokerLibrary.pdb
 C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.csproj.CopyComplete
 C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.exe
 C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.pdb
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.Inputs.resources
+C:\Users\Joseph\source\repos\Poker\PokerGUI\obj\Debug\PokerGUI.winningHandForm.resources

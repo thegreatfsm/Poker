@@ -6,61 +6,83 @@ using System.Threading.Tasks;
 
 namespace PokerLibrary
 {
-    public class Game // Game consists of Deck and Community Cards, as well as has access to each player. Method for giving money to player for winning hand.
+    // Game consists of Deck and Community Cards, as well as has access to each player. Method for giving money to player for winning hand.
+    // player to left of small blind goes first after flop
+    // Implement side pot and blinds(done), then work on UI game logic almost done, work on checking if each player has bet, requires computer ai.
+    public class Game 
     {
-        // Implement side pot and blinds(done), then work on UI game logic almost done, work on checking if each player has bet, requires computer ai.
+        
         private int numberOfPlayers;
         public int Turn { get; set; }
         public List<Pot> Pots { get; set; }
-        
-        public decimal Bet { get; set; }
-        private Deck Deck { get; set; }
-        private List<Player> players;
+        public Pot ActivePot { get; set; }
+        public decimal TotalMaxBet { get; set; }
+        public decimal CurrentMaxBet { get; set; }
+        public decimal BigBlind { get; set; }
+        public decimal SmallBlind { get; set; }
+        public Deck Deck { get; set; }
+        public List<Player> Players { get; set; }
         public List<Card> CommunityCards { get; set; }
+        public Dictionary<Player, decimal> PlayersBets { get; set; }
 
         public Game (int aNumberOfPlayers, decimal PlayerBank)
         {
             numberOfPlayers = aNumberOfPlayers;
-            Turn = 1;
-            
-            Bet = 0;
+            Turn = 0;
+            PlayersBets = new Dictionary<Player, decimal>();
+
+
+            BigBlind = Math.Floor(PlayerBank / 20);
+            SmallBlind = Math.Floor(BigBlind / 2);
+            TotalMaxBet = BigBlind;
             Deck = new Deck();
             Deck.Shuffle();
-            for (int i = 0; i <= numberOfPlayers; i++)
+            Players = new List<Player>();
+            for (int i = 1; i <= numberOfPlayers; i++)
             {
-                if (i == 0)
+                if (i == 1)
                 {
-                    players.Add(new Player(PlayerBank));
+                    Players.Add(new Player(PlayerBank, i));
                     
                 }
                 else
                 {
-                    players.Add(new ComputerPlayer(PlayerBank));
+                    Players.Add(new ComputerPlayer(PlayerBank, i));
                 }
             }
-            players[0].BigBlind = true;
-            players[1].SmallBlind = true;
+            var dealerPosition = new Random().Next(0, numberOfPlayers);
+            Players[dealerPosition].Dealer = true;
+            var smallBlindPosition = (dealerPosition + 1) > (numberOfPlayers - 1) ? dealerPosition - numberOfPlayers + 1 : dealerPosition + 1;
+            var bigBlindPosition = (dealerPosition + 2) > (numberOfPlayers - 1) ? dealerPosition - numberOfPlayers + 2 : dealerPosition + 2;
+            Players[smallBlindPosition].SmallBlind = true;
+            Players[smallBlindPosition].TotalBet = SmallBlind;
+            Players[smallBlindPosition].CurrentBet = SmallBlind;
+            PlayersBets.Add(Players[smallBlindPosition], Players[smallBlindPosition].TotalBet);
+            Players[smallBlindPosition].Bank -= SmallBlind;
+            Players[bigBlindPosition].BigBlind = true;
+            Players[bigBlindPosition].TotalBet = BigBlind;
+            Players[bigBlindPosition].CurrentBet = BigBlind;
+            PlayersBets.Add(Players[bigBlindPosition], Players[bigBlindPosition].TotalBet);
+            Players[bigBlindPosition].Bank -= BigBlind;
             Pots = new List<Pot>();
-            Pots.Add(new Pot(players, 0));
+            Pots.Add(ActivePot = new Pot(Players, 0));
+            ActivePot.Size += SmallBlind;
+            ActivePot.Size += BigBlind;
             CommunityCards = new List<Card>();
-            CommunityCardsDraw();
-            foreach(var player in players)
-            {
-                PlayerDraw(player);
-            }
+            PlayerDeal();
         }
-                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                       
         private void CommunityCardsDraw() // Puts the card in community pool
         {
-            for (int i = 0; i <= 4; i++)
-            {
                 var temp = Deck.CardList[0];
                 CommunityCards.Add(temp);
                 Deck.CardList.RemoveAt(0);
-                if (i > 2)
-                {
-                    CommunityCards[i].Active = false;
-                }
+        }
+        private void CommunityCardsDeal() // Deals the initial cards
+        {
+            for(int i =0; i<= 2; i++)
+            {
+                CommunityCardsDraw();
             }
         }
         private void PlayerDraw(Player player) // Draws a card for the player
@@ -68,14 +90,15 @@ namespace PokerLibrary
             
             var temp = Deck.CardList[0];
             player.Hand.Cards.Add(temp);
+            player.OriginalHand.Cards.Add(temp);
             Deck.CardList.RemoveAt(0);
             
         }
-        public void PlayerDeal() // Deals to each player
+        private void PlayerDeal() // Deals to each player
         {
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 2; i++)
             {
-                foreach(var player in players)
+                foreach(var player in ActivePot.CompetingPlayers)
                 {
                     PlayerDraw(player);
                 }
@@ -83,188 +106,179 @@ namespace PokerLibrary
         }
         public void TurnProgression() // Moves to the next turn
         {
-            CommunityCards[Turn + 2].Active = true;
+            if(Turn == 0)
+            {
+                CommunityCardsDeal();
+            }
+            else
+            {
+                CommunityCardsDraw();
+            }
             Turn++;
             
         }
-        public void RoundProgression() // Moves the blinds around and determines if players are still eligible to player
+        public void RoundProgression() // --CURENTLY THE CAUSE OF THE CRASHES WHEN BLINDS DON'T MOVE AROUND CORRECTLY--Ends the round, moves the blinds around and determines if players are still eligible to play
         {
-            foreach(var player in players) // Sets each player to active/inactive if they're broke
+            Pots.Clear(); // Clears out the pots
+            Deck = new Deck();
+            PlayersBets.Clear();
+            Deck.Shuffle();
+            CommunityCards.Clear();
+            Turn = 0;
+            foreach (var player in Players) // Sets each player to active/inactive if they're broke
             {
-                if(player.Bank == 0)
+                player.TotalBet = 0;
+                player.Hand.Cards.Clear();
+                player.OriginalHand.Cards.Clear();
+                if (player.Bank <= 0)
                 {
                     player.Active = false;
                 }
                 if(!player.Active && player.Bank > 0)
                 {
                     player.Active = true;
+                    player.Fold = false;
                 }
             }
             int smallBlindPosition = 0;
             int bigBlindPosition = 0;
-            for (int i = 0; i < players.Count(); i++) // Locates position of big and small blind
+            int dealerPosition = 0;
+            for (int i = 0; i < Players.Count(); i++) // Locates position of big and small blind and dealer
             {
-                if (players[i].SmallBlind)
+                if (Players[i].SmallBlind)
                 {
                     smallBlindPosition = i;
                 }
-                if (players[i].BigBlind)
+                if (Players[i].BigBlind)
                 {
                     bigBlindPosition = i;
                 }
-            }
-            for (int i = smallBlindPosition; i < players.Count() - 1; i++) // Moves the small blind to the next active player
-            {
-                if(i < players.Count() - 1)
+                if (Players[i].Dealer)
                 {
-                    if (players[i].Active && !players[i].SmallBlind)
-                    {
-                        players[i].SmallBlind = true;
-                        players[smallBlindPosition].SmallBlind = false;
-                        break;
-                    }
-                }
-                else
-                {
-                    if (players[i - (players.Count()-1)].Active && !players[i - (players.Count() - 1)].SmallBlind)
-                    {
-                        players[i - (players.Count() - 1)].SmallBlind = true;
-                        players[smallBlindPosition].SmallBlind = false;
-                        break;
-                    }
+                    dealerPosition = i;
                 }
             }
-            for (int i = bigBlindPosition; i < players.Count() - 1; i++) // Moves the big blind to the next active player
+
+            for (int i = dealerPosition; true; i++) // Moves the dealer to the next active player
             {
-                if (i < players.Count() - 1)
+                i = i == Players.Count() ? 0 : i;
+                if (Players[i].Active && !Players[i].Dealer)
                 {
-                    if (players[i].Active && !players[i].BigBlind)
-                    {
-                        players[i].BigBlind = true;
-                        players[bigBlindPosition].BigBlind = false;
-                        break;
-                    }
+                    Players[i].Dealer = true;
+                    Players[dealerPosition].Dealer = false;
+                    dealerPosition = i;
+                    break;
                 }
-                else
+            }
+
+            for (int i = smallBlindPosition; true; i++) // Moves the small blind to the next active player
+            {
+                i = i == Players.Count() ? 0 : i;
+                if (Players[i].Active && !Players[i].SmallBlind)
                 {
-                    if (players[i - (players.Count() - 1)].Active && !players[i - (players.Count() - 1)].BigBlind)
-                    {
-                        players[i - (players.Count() - 1)].BigBlind = true;
-                        players[bigBlindPosition].BigBlind = false;
-                        break;
-                    }
+                    Players[i].SmallBlind = true;
+                    Players[smallBlindPosition].SmallBlind = false;
+                    smallBlindPosition = i;
+                    break;
+                }
+            }
+
+            for (int i = bigBlindPosition; true; i++) // Moves the big blind to the next active player
+            {
+                i = i == Players.Count() ? 0 : i;
+                if (Players[i].Active && !Players[i].BigBlind)
+                {
+                    Players[i].BigBlind = true;
+                    Players[bigBlindPosition].BigBlind = false;
+                    bigBlindPosition = i;
+                    break;
                 }
             }
 
 
-        }
-        public void WinningHand() // Evaluates hand and determines winner
-        {
-            Dictionary<Player, int> playerHandValues = new Dictionary<Player, int>();
-            List<Player> winningPlayers = new List<Player>();
-            foreach (var player in players)
+            // --- Creates new pot ----
+            var ActivePlayers = new List<Player>();
+            foreach(var player in Players)
             {
                 if (player.Active)
                 {
-                    playerHandValues.Add(player, player.Hand.Evaluate());
-
+                    ActivePlayers.Add(player);
                 }
             }
-            var winningHandValue = playerHandValues.Values.Max();
-            foreach (var player in playerHandValues.Keys)
+            Pots.Add(ActivePot = new Pot(ActivePlayers, 0));
+            Players[bigBlindPosition].TotalBet = BigBlind;
+            Players[bigBlindPosition].CurrentBet = BigBlind;
+            Players[bigBlindPosition].Bank -= BigBlind;
+            PlayersBets.Add(Players[bigBlindPosition], Players[bigBlindPosition].TotalBet);
+            ActivePot.Size += BigBlind;
+            Players[smallBlindPosition].TotalBet = SmallBlind;
+            Players[smallBlindPosition].CurrentBet = SmallBlind;
+            Players[smallBlindPosition].Bank -= SmallBlind;
+            PlayersBets.Add(Players[smallBlindPosition], Players[smallBlindPosition].TotalBet);
+            ActivePot.Size += SmallBlind;
+            PlayerDeal();
+            TotalMaxBet = BigBlind;
+            
+
+        }
+        public int ActivePlayers()
+        {
+            int activePlayers = 0;
+            foreach (var player in Players)
             {
-                if (playerHandValues[player] == winningHandValue)
+                if (player.Active)
+                {
+                    activePlayers++;
+                }
+            }
+            return activePlayers;
+        }
+        public void ClearBets()
+        {
+            foreach (var player in Players)
+            {
+                player.CurrentBet = 0;
+            }
+        }
+        public void WinningHand(Pot pot) // Evaluates hands of players in a pot
+        {
+            Dictionary<Player, int> playerHandValues = new Dictionary<Player, int>();
+            List<Player> winningPlayers = new List<Player>();
+
+            foreach(var player in pot.CompetingPlayers) // Checks hand of each player in the pot
+            {
+                if (!player.Fold)
+                {
+                    player.FindBestHand(CommunityCards);
+                    playerHandValues.Add(player, player.Hand.Evaluate());
+                }           
+            }
+            var winningHandValue = playerHandValues.Values.Max(); // Best hand value
+            foreach(var player in pot.CompetingPlayers) // Finds winners
+            {
+                if (player.Fold)
+                {
+                    continue;
+                }
+                if(playerHandValues[player] == winningHandValue)
                 {
                     winningPlayers.Add(player);
+                    pot.WinningPlayers.Add(player);
                 }
             }
-            if (Pots.Count() == 1) 
+            var split = pot.Size / winningPlayers.Count(); // Splits the pot if needed
+            foreach (var player in winningPlayers) // Awards pot to winner(s)
             {
-                
-                if (winningPlayers.Count() == 1) // one winner one pot
-                {
-                    winningPlayers[0].Bank += Pots[0].Size;
-                    Pots.Clear();
-                    Pots.Add(new Pot(players, 0));
-                    Bet = 0;
-                }
-                else if (winningPlayers.Count() > 1) // multiple winners multiple pots
-                {
-                    var split = Pots[0].Size / winningPlayers.Count();
-
-                    foreach (var player in winningPlayers)
-                    {
-                        player.Bank += split;
-                    }
-
-                    Pots.Clear();
-                    Pots.Add(new Pot(players, 0));
-                    Bet = 0;
-                }
+                player.Bank += split;
             }
-            else
+
+        }
+        public void PlayerFold(Player player)
+        {
+            foreach(var pot in Pots)
             {
-                if (winningPlayers.Count() == 1) // One winner and multiple pots
-                {
-                    foreach(var pot in Pots) // one person case, pretty straightforward
-                    {
-                        if (pot.CompetingPlayers.Contains(winningPlayers[0])) //awards pot to winning player if in pot
-                        {
-                            winningPlayers[0].Bank += pot.Size;
-                        }
-                        else // split pot between others
-                        {
-                            var split = pot.Size / pot.CompetingPlayers.Count();
-                            foreach (var player in pot.CompetingPlayers)
-                            {
-                                player.Bank += split;
-                            }    
-                        }
-                    }
-                    Pots.Clear();
-                    Pots.Add(new Pot(players, 0));
-                    Bet = 0;
-                }
-                else if (winningPlayers.Count() > 1) // If theres more than one winner AND more than one pot
-                {
-                    
-                    foreach(var pot in Pots)
-                    {
-                        var tempPlayers = new List<Player>();
-                        foreach(var player in pot.CompetingPlayers)
-                        {
-                            if (winningPlayers.Contains(player))
-                            {
-                                tempPlayers.Add(player);
-                            }
-                        }
-                        if (tempPlayers.Count() == 1) // Pot awarded to sole winner in pot
-                        {
-                            tempPlayers[0].Bank += pot.Size;
-                        }
-                        else if(tempPlayers.Count() > 1) // Pot split between winners of pot
-                        {
-                            var split = pot.Size / tempPlayers.Count();
-                            foreach(var player in tempPlayers)
-                            {
-                                player.Bank += split;
-                            }
-                        }
-                        else // Pot is split between losers if no winner in pot
-                        {
-                            var split = pot.Size / pot.CompetingPlayers.Count();
-                            foreach(var player in pot.CompetingPlayers)
-                            {
-                                player.Bank += split;
-                            }
-                        }
-                        Pots.Clear();
-                        Pots.Add(new Pot(players, 0));
-                        Bet = 0;
-                    }
-                }
+                pot.CompetingPlayers.Remove(player);
             }
-            
         }
     }
 }

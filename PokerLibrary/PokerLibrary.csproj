@@ -33,6 +33,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,6 +50,60 @@
     <Compile Include="Player.cs" />
     <Compile Include="Pot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="CardImages\1.png" />
+    <Content Include="CardImages\10.png" />
+    <Content Include="CardImages\11.png" />
+    <Content Include="CardImages\12.png" />
+    <Content Include="CardImages\13.png" />
+    <Content Include="CardImages\14.png" />
+    <Content Include="CardImages\15.png" />
+    <Content Include="CardImages\16.png" />
+    <Content Include="CardImages\17.png" />
+    <Content Include="CardImages\18.png" />
+    <Content Include="CardImages\19.png" />
+    <Content Include="CardImages\2.png" />
+    <Content Include="CardImages\20.png" />
+    <Content Include="CardImages\21.png" />
+    <Content Include="CardImages\22.png" />
+    <Content Include="CardImages\23.png" />
+    <Content Include="CardImages\24.png" />
+    <Content Include="CardImages\25.png" />
+    <Content Include="CardImages\26.png" />
+    <Content Include="CardImages\27.png" />
+    <Content Include="CardImages\28.png" />
+    <Content Include="CardImages\29.png" />
+    <Content Include="CardImages\3.png" />
+    <Content Include="CardImages\30.png" />
+    <Content Include="CardImages\31.png" />
+    <Content Include="CardImages\32.png" />
+    <Content Include="CardImages\33.png" />
+    <Content Include="CardImages\34.png" />
+    <Content Include="CardImages\35.png" />
+    <Content Include="CardImages\36.png" />
+    <Content Include="CardImages\37.png" />
+    <Content Include="CardImages\38.png" />
+    <Content Include="CardImages\39.png" />
+    <Content Include="CardImages\4.png" />
+    <Content Include="CardImages\40.png" />
+    <Content Include="CardImages\41.png" />
+    <Content Include="CardImages\42.png" />
+    <Content Include="CardImages\43.png" />
+    <Content Include="CardImages\44.png" />
+    <Content Include="CardImages\45.png" />
+    <Content Include="CardImages\46.png" />
+    <Content Include="CardImages\47.png" />
+    <Content Include="CardImages\48.png" />
+    <Content Include="CardImages\49.png" />
+    <Content Include="CardImages\5.png" />
+    <Content Include="CardImages\50.png" />
+    <Content Include="CardImages\51.png" />
+    <Content Include="CardImages\52.png" />
+    <Content Include="CardImages\6.png" />
+    <Content Include="CardImages\7.png" />
+    <Content Include="CardImages\8.png" />
+    <Content Include="CardImages\9.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

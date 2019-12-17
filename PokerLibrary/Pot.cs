@@ -10,11 +10,14 @@ namespace PokerLibrary
     {
         public List<Player> CompetingPlayers { get; set; }
         public decimal Size { get; set; }
+        public List<Player> WinningPlayers { get; set; }
+        
 
         public Pot(List<Player> aCompetingPlayers, decimal aSize)
         {
             CompetingPlayers = new List<Player>(aCompetingPlayers);
             Size = aSize;
+            WinningPlayers = new List<Player>();
         }
     }
 }
