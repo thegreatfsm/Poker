@@ -64,6 +64,10 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                 {
                     playersListBox.Items.Add(player);
                 }
+                foreach(var pot in currentGame.Pots)
+                {
+                    playersListBox.Items.Add(pot);
+                }
             };
             playersListBox.Invoke(methodInvoker);
             
@@ -98,7 +102,7 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                 NewPotCheck(currentGame.Bet - oldGameBet, player);
             }*/
         }
-        private void NewPotCheck(decimal potSize, Player playerCheck) //Creates a new pot if necessary
+        /*private void NewPotCheck(decimal potSize, Player playerCheck) //Creates a new pot if necessary
         {
             bool newPotNeeded = false;
             List<Player> carryOverPlayers = new List<Player>();
@@ -122,28 +126,24 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                 currentGame.Pots.Add(currentGame.ActivePot = new Pot(carryOverPlayers, potSize));
             }
 
-        }
-        private void NewPot(Dictionary<Player, decimal> PlayerBets)
+        }*/
+        private void NewPot(Dictionary<Player, decimal> PlayerBets)//account for folded players to minimize pots
         {
             List<Player> carryOverPlayers = new List<Player>();
-            decimal potSize = 0;
             Pot oldPot = currentGame.ActivePot;
-            
-            while (PlayerBets.Values.Min() != PlayerBets.Values.Max()) // check for smaller bets that go in old pot
+            var activeMin = currentGame.GetSmallestActiveBet();
+            while (activeMin != PlayerBets.Values.Max()) // check for smaller bets that go in old pot
             {
-                var minBet = PlayerBets.Values.Min();
-                
-                
                 for (int i = 0; i < oldPot.CompetingPlayers.Count(); i++)
                 {
-                    if(PlayerBets[oldPot.CompetingPlayers[i]] == minBet)
+                    if(PlayerBets[oldPot.CompetingPlayers[i]] <= activeMin)
                     {
-                        PlayerBets.Remove(oldPot.CompetingPlayers[i]);
+                        PlayerBets.Remove(oldPot.CompetingPlayers[i]); // Removes player from betting dictionary therefore changing the min
                     }
                     else
                     {
                         carryOverPlayers.Add(oldPot.CompetingPlayers[i]);
-                        PlayerBets[oldPot.CompetingPlayers[i]] -= minBet;
+                        PlayerBets[oldPot.CompetingPlayers[i]] -= activeMin;
                         oldPot.Size -= PlayerBets[oldPot.CompetingPlayers[i]];
                         if(PlayerBets[oldPot.CompetingPlayers[i]] == 0)
                         {
@@ -154,26 +154,10 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                 currentGame.Pots.Add(currentGame.ActivePot = new Pot(carryOverPlayers, PlayerBets.Values.Sum()));
                 carryOverPlayers.Clear();
                 oldPot = currentGame.ActivePot;
-                
-                /*foreach(var player in PlayerBets.Keys)
-                {
-                    if(PlayerBets[player] == PlayerBets.Values.Min())
-                    {
-                        PlayerBets.Remove(player);
-                    }
-                    else
-                    {
-                        carryOverPlayers.Add(player);
-                        PlayerBets[player]
-                        currentGame.ActivePot.Size -= 
-                    }
-                }*/
+                activeMin = currentGame.GetSmallestActiveBet();
+            
             }
-            /*foreach(var player in PlayerBets.Keys)
-            {
-                potSize += PlayerBets[player];
-                carryOverPlayers.Add(player);
-            }*/
+            
         }
         private void BettingProgression() // Use async to bring buttons up when needed, is used to make sure each player in the active pot gets a chance to bet
         {
@@ -216,7 +200,8 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                         var oldBet = currentGame.TotalMaxBet;
                         var computer = (ComputerPlayer)activePlayers[i];
                         var playerOld = computer.TotalBet;
-                        computer.Check(currentGame);
+                        computer.BettingAI(currentGame);
+                        //computer.CompCheck(currentGame);
                         //computer ai bet/fold/check
                         UpdatePlayers();
                         if (!currentGame.PlayersBets.ContainsKey(computer))
@@ -233,6 +218,14 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                             largestBet = computer.CurrentBet;
                         }
                         largestBet = computer.CurrentBet > largestBet ? computer.CurrentBet : largestBet;
+                    }
+                    else
+                    {
+                        var player = activePlayers[i];
+                        if (!currentGame.PlayersBets.ContainsKey(player))
+                        {
+                            currentGame.PlayersBets.Add(player, 0);
+                        }
                     }
                     loopCount++;
                 }
@@ -385,7 +378,6 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
             var player = currentGame.Players[0];
             player.Active = false;
             player.Fold = true;
-            //currentGame.PlayerFold(player);
             foldButtonPressed = true;
         }
         private void AddCardImages()
@@ -396,15 +388,6 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
             switch (currentGame.Turn)
             {
                 case 0:
-                    /*foreach (var item in communityCardImages)
-                    {
-
-                        MethodInvoker methodInvokerDelegate = delegate ()
-                        {
-                            item.Image =
-                        };
-                        
-                    }*/
                     var loopNumber = 0;
                     foreach (var item in cardImages)
                     {
@@ -413,7 +396,6 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
                         {
                             item.Image = player.Hand.Cards[loopNumber].CardImage;
                             item.SizeMode = PictureBoxSizeMode.StretchImage;
-                            //item.CreateGraphics();
                         };
                         item.Invoke(methodInvokerDelegate);
                         loopNumber++;
@@ -465,35 +447,35 @@ namespace PokerGUI // Need to add Pot logic, Computer AI and overall game logic 
         }
         private void CreateWinningHandGui(Pot pot)
         {
-            //new System.Threading.Thread(() => new winningHandForm(pot).ShowDialog()).Start();
             Invoke((Action)(() => { new winningHandForm(pot).Show(); }));
-            //var winningHandGui = new winningHandForm(pot);
-            //winningHandGui.Show();
         }
         private void GameProgression()
         {
             var player = currentGame.Players[0];
 
-            while (player.Active && currentGame.ActivePlayers() > 1)
+            while (player.Active && currentGame.NumActivePlayers() > 1)
             {
                 AddCardImages();
                 BettingProgression();
 
-                while (currentGame.Turn != 3 && currentGame.ActivePot.CompetingPlayers.Count() > 1)
+                while (currentGame.Turn != 3 && currentGame.NumActivePlayers() > 1)
                 {
                     currentGame.TurnProgression();
                     AddCardImages();
                     BettingProgression();
 
                 }
+                while(currentGame.Turn != 3)
+                {
+                    currentGame.TurnProgression();
+                    AddCardImages();
+                }
                 foreach (var pot in currentGame.Pots)
                 {
                     currentGame.WinningHand(pot);
                     CreateWinningHandGui(pot);
-                    
                 }
                 ClearCommunityCards();
-
                 currentGame.RoundProgression();
                 UpdatePlayers();
             }

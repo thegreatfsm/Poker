@@ -67,7 +67,7 @@ namespace PokerLibrary
                     (t1, t2) => t1.Concat(new T[] { t2 }));
         }
 
-        public override string ToString() => $"Player Number: {PlayerNumber} Bankroll: {Bank:C} Current Bet:{TotalBet:C} Playing: {(Active ? "Yes": "No")} {(SmallBlind ? "Small Blind" : "")+(BigBlind ? "Big Blind" : "")+(Dealer ? "Dealer": "")}";
+        public override string ToString() => $"Player Number: {PlayerNumber} Bankroll: {Bank:C} Current Bet:{TotalBet:C} Playing: {(Active ? "Yes": "No")} {(SmallBlind ? "Small Blind " : "")+(BigBlind ? "Big Blind" : "")+(Dealer ? "Dealer": "")}";
     }
 }
 

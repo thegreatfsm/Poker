@@ -37,6 +37,7 @@ namespace PokerLibrary
             TotalMaxBet = BigBlind;
             Deck = new Deck();
             Deck.Shuffle();
+            Pot.PotNumber = 0;
             Players = new List<Player>();
             for (int i = 1; i <= numberOfPlayers; i++)
             {
@@ -51,9 +52,21 @@ namespace PokerLibrary
                 }
             }
             var dealerPosition = new Random().Next(0, numberOfPlayers);
+            int bigBlindPosition = 0;
+            int smallBlindPosition = 0;
             Players[dealerPosition].Dealer = true;
-            var smallBlindPosition = (dealerPosition + 1) > (numberOfPlayers - 1) ? dealerPosition - numberOfPlayers + 1 : dealerPosition + 1;
-            var bigBlindPosition = (dealerPosition + 2) > (numberOfPlayers - 1) ? dealerPosition - numberOfPlayers + 2 : dealerPosition + 2;
+            if(numberOfPlayers == 2)
+            {
+                bigBlindPosition = dealerPosition == 0 ? 1 : 0;
+                smallBlindPosition = dealerPosition;
+                Players[dealerPosition].SmallBlind = true;
+                Players[bigBlindPosition].BigBlind = true;
+            }
+            else
+            {
+                smallBlindPosition = (dealerPosition + 1) > (numberOfPlayers - 1) ? dealerPosition - numberOfPlayers + 1 : dealerPosition + 1;
+                bigBlindPosition = (dealerPosition + 2) > (numberOfPlayers - 1) ? dealerPosition - numberOfPlayers + 2 : dealerPosition + 2;
+            }
             Players[smallBlindPosition].SmallBlind = true;
             Players[smallBlindPosition].TotalBet = SmallBlind;
             Players[smallBlindPosition].CurrentBet = SmallBlind;
@@ -125,20 +138,27 @@ namespace PokerLibrary
             Deck.Shuffle();
             CommunityCards.Clear();
             Turn = 0;
+            Pot.PotNumber = 0;
             foreach (var player in Players) // Sets each player to active/inactive if they're broke
             {
                 player.TotalBet = 0;
                 player.Hand.Cards.Clear();
                 player.OriginalHand.Cards.Clear();
-                if (player.Bank <= 0)
+                if (player.Bank < BigBlind)
                 {
                     player.Active = false;
                 }
-                if(!player.Active && player.Bank > 0)
+                if(!player.Active && player.Bank >= BigBlind)
                 {
                     player.Active = true;
                     player.Fold = false;
                 }
+            }
+
+            int numActivePlayers = NumActivePlayers();
+            if(numActivePlayers == 1)
+            {
+                return;
             }
             int smallBlindPosition = 0;
             int bigBlindPosition = 0;
@@ -158,7 +178,7 @@ namespace PokerLibrary
                     dealerPosition = i;
                 }
             }
-
+            
             for (int i = dealerPosition; true; i++) // Moves the dealer to the next active player
             {
                 i = i == Players.Count() ? 0 : i;
@@ -170,28 +190,48 @@ namespace PokerLibrary
                     break;
                 }
             }
-
-            for (int i = smallBlindPosition; true; i++) // Moves the small blind to the next active player
+            if(numActivePlayers > 2)
             {
-                i = i == Players.Count() ? 0 : i;
-                if (Players[i].Active && !Players[i].SmallBlind)
+                for (int i = dealerPosition; true; i++) // Moves the small blind to the next active player
                 {
-                    Players[i].SmallBlind = true;
-                    Players[smallBlindPosition].SmallBlind = false;
-                    smallBlindPosition = i;
-                    break;
+                    i = i == Players.Count() ? 0 : i;
+                    if (Players[i].Active && !Players[i].SmallBlind && !Players[i].Dealer)
+                    {
+                        Players[i].SmallBlind = true;
+                        Players[smallBlindPosition].SmallBlind = false;
+                        smallBlindPosition = i;
+                        break;
+                    }
+                }
+
+                for (int i = dealerPosition; true; i++) // Moves the big blind to the next active player
+                {
+                    i = i == Players.Count() ? 0 : i;
+                    if (Players[i].Active && !Players[i].BigBlind && !Players[i].SmallBlind && !Players[i].Dealer)
+                    {
+                        Players[i].BigBlind = true;
+                        Players[bigBlindPosition].BigBlind = false;
+                        bigBlindPosition = i;
+                        break;
+                    }
                 }
             }
-
-            for (int i = bigBlindPosition; true; i++) // Moves the big blind to the next active player
+            else
             {
-                i = i == Players.Count() ? 0 : i;
-                if (Players[i].Active && !Players[i].BigBlind)
+                Players[smallBlindPosition].SmallBlind = false;
+                Players[bigBlindPosition].BigBlind = false;
+                smallBlindPosition = dealerPosition;
+                Players[dealerPosition].SmallBlind = true; // Dealer is also small blind
+                for (int i = dealerPosition; true; i++) // Moves the big blind to the next active player
                 {
-                    Players[i].BigBlind = true;
-                    Players[bigBlindPosition].BigBlind = false;
-                    bigBlindPosition = i;
-                    break;
+                    i = i == Players.Count() ? 0 : i;
+                    if (Players[i].Active && !Players[i].BigBlind && !Players[i].SmallBlind && !Players[i].Dealer)
+                    {
+                        Players[i].BigBlind = true;
+                        Players[bigBlindPosition].BigBlind = false;
+                        bigBlindPosition = i;
+                        break;
+                    }
                 }
             }
 
@@ -221,7 +261,7 @@ namespace PokerLibrary
             
 
         }
-        public int ActivePlayers()
+        public int NumActivePlayers()
         {
             int activePlayers = 0;
             foreach (var player in Players)
@@ -239,6 +279,18 @@ namespace PokerLibrary
             {
                 player.CurrentBet = 0;
             }
+        }
+        public decimal GetSmallestActiveBet()
+        {
+            decimal temp = PlayersBets.Values.Max();
+            foreach(var player in PlayersBets.Keys)
+            {
+                if(!player.Fold && PlayersBets[player] < temp)
+                {
+                    temp = PlayersBets[player];
+                }
+            }
+            return temp;
         }
         public void WinningHand(Pot pot) // Evaluates hands of players in a pot
         {
@@ -273,12 +325,6 @@ namespace PokerLibrary
             }
 
         }
-        public void PlayerFold(Player player)
-        {
-            foreach(var pot in Pots)
-            {
-                pot.CompetingPlayers.Remove(player);
-            }
-        }
+        
     }
 }

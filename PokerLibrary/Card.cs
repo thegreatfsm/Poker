@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,7 +26,7 @@ namespace PokerLibrary
             Value = faceNumber + 1;
             Suit = Suits[suitNumber];
             CompareValue = aCompareValue;
-            CardImage = Image.FromFile($@"C:\Users\Joseph\source\repos\Poker\PokerLibrary\CardImages\{CompareValue}.png");
+            CardImage = Image.FromFile(FindPokerDirectory() + $@"\PokerLibrary\CardImages\{CompareValue}.png");
         }
 
         public int CompareTo(Card card)
@@ -43,6 +44,18 @@ namespace PokerLibrary
                 return -1;
             }
             
+        }
+
+        private string FindPokerDirectory() //Finds the directory on other computers
+        {
+            var path = Environment.CurrentDirectory;
+            var temp = path;
+            while (temp.Contains(@"\Poker\"))
+            {
+                temp = Path.GetDirectoryName(temp);
+            }
+            path = temp;
+            return path;
         }
     }
 }

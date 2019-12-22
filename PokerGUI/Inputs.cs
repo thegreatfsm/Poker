@@ -23,13 +23,17 @@ namespace PokerGUI
         {
             try
             {
-                PokerGUI.NumberOfPlayers = Int32.Parse(playersText.Text);
-                PokerGUI.PlayerPotSize = Decimal.Parse(bankRollText.Text);
+                PokerGUI.NumberOfPlayers = int.Parse(playersText.Text);
+                if(PokerGUI.NumberOfPlayers < 2 || PokerGUI.NumberOfPlayers > 10)
+                {
+                    throw new Exception("Out of player range.");
+                }
+                PokerGUI.PlayerPotSize = decimal.Parse(bankRollText.Text);
                 PokerGUI.currentGame = new Game(PokerGUI.NumberOfPlayers, PokerGUI.PlayerPotSize);
                 PokerGUI.pokerGUI.StartUp();
                 Close();
             }
-            catch(Exception a)
+            catch
             {
                 MessageBox.Show("Please enter valid inputs");
                 //MessageBox.Show(a.Message);
